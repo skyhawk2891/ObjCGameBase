@@ -61,7 +61,7 @@ static NSString *_fallbackTable[128] =
     /* 36 */ @"Right Command",
     /* 37 */ @"Left Command",
     /* 38 */ @"Left Shift",
-    /* 39 */ nil,
+    /* 39 */ @"Caps Lock",
     /* 3a */ @"Left Option",
     /* 3b */ @"Left Control",
     /* 3c */ @"Right Shift",
@@ -75,7 +75,7 @@ static NSString *_fallbackTable[128] =
     /* 44 */ nil,
     /* 45 */ @"Keypad +",
     /* 46 */ nil,
-    /* 47 */ nil,
+    /* 47 */ @"Clear",
     /* 48 */ nil,
     /* 49 */ nil,
     /* 4a */ nil,
@@ -139,12 +139,16 @@ static NSString *_fallbackTable[128] =
 NSString *_fallbackGBKeyName(unsigned keyCode)
 {
     return keyCode < 128 && _fallbackTable[keyCode]
-        ? _fallbackTable[keyCode]
-        : [NSString stringWithFormat:@"Key #%u", keyCode];
+	? _fallbackTable[keyCode]
+	: [NSString stringWithFormat:@"Key #%u", keyCode];
 }
 
 NSString *GBKeyName(unsigned keyCode)
 {
+	// HACK: special case spacebar
+	if(keyCode == 49)
+		return _fallbackGBKeyName(keyCode);
+	
     TISInputSourceRef inputSource = TISCopyCurrentKeyboardLayoutInputSource();
     if (!inputSource)
     {
@@ -152,8 +156,8 @@ NSString *GBKeyName(unsigned keyCode)
         return _fallbackGBKeyName(keyCode);
     }    
     NSData *uchr = TISGetInputSourceProperty(
-        inputSource,
-        kTISPropertyUnicodeKeyLayoutData);
+											 inputSource,
+											 kTISPropertyUnicodeKeyLayoutData);
     if (!uchr)
     {
         // NSLog(@"no uchr data for input source, falling back");
@@ -165,16 +169,16 @@ NSString *GBKeyName(unsigned keyCode)
     UniChar buffer[8];
     UniCharCount actualStringLength = 0;
     OSStatus err = UCKeyTranslate(
-        [uchr bytes],
-        keyCode,
-        kUCKeyActionDisplay,
-        0, // modifier flags
-        LMGetKbdType(),
-        kUCKeyTranslateNoDeadKeysBit,
-        &deadKeys,
-        8, // length of buffer
-        &actualStringLength,
-        buffer);
+								  [uchr bytes],
+								  keyCode,
+								  kUCKeyActionDisplay,
+								  0, // modifier flags
+								  LMGetKbdType(),
+								  kUCKeyTranslateNoDeadKeysBit,
+								  &deadKeys,
+								  8, // length of buffer
+								  &actualStringLength,
+								  buffer);
     if (err != noErr)
     {
         // NSLog(@"error %d in UCKeyTranslate, falling back", err);
@@ -188,6 +192,6 @@ NSString *GBKeyName(unsigned keyCode)
         return _fallbackGBKeyName(keyCode);
     }
     
-    NSLog(@"0x%04x", buffer[0]);
+	NSLog(@"0x%04x", buffer[0]);
     return [[NSString stringWithCharacters:buffer length:actualStringLength] uppercaseString];
 }
