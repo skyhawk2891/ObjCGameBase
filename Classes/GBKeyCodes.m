@@ -146,7 +146,7 @@ NSString *_fallbackGBKeyName(unsigned keyCode)
 NSString *GBKeyName(unsigned keyCode)
 {
 	// HACK: special case spacebar
-	if(keyCode == 49)
+	if(keyCode == 0x31)
 		return _fallbackGBKeyName(keyCode);
 	
     TISInputSourceRef inputSource = TISCopyCurrentKeyboardLayoutInputSource();
